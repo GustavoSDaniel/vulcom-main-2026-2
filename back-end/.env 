@@ -1,0 +1,12 @@
+# Renomeie este arquivo para .env e preencha os valores abaixo
+
+# Gere uma chave de token em https://jwtsecrets.com/
+# (O token secret é simplesmente uma string aleatória)
+TOKEN_SECRET="8f1ae029733d31f6b8784279ad8a8e4ecbc6c33c32aecf2ef9d56fff311205a3"
+
+# Nome do cookie de autenticação, p. ex. _auth
+# # (mesmo valor de VITE_AUTH_COOKIE_NAME no .env.local do front-end)
+AUTH_COOKIE_NAME="_auth"
+
+# URLs do front-end a partir do qual serão aceitas requisições, separadas por vírgulas
+ALLOWED_ORIGINS="https://improved-parakeet-x5967wvx77wrfq77-5173.app.github.dev"
