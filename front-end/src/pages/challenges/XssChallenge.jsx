@@ -1,3 +1,4 @@
+
 import React from 'react'
 import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
@@ -14,58 +15,101 @@ export default function XssChallenge() {
 
   async function loadComments() {
     try {
-      setComments(await myfetch.get('/challenges/xss/comments'))
-    }
-    catch(error) {
+      const data = await myfetch.get('/challenges/xss/comments')
+      setComments(Array.isArray(data) ? data : [])
+      setError(null)
+    } catch (error) {
       setError(error.message)
     }
   }
 
-  React.useEffect(() => { loadComments() }, [])
+  React.useEffect(() => {
+    loadComments()
+  }, [])
 
   async function handleSubmit(event) {
     event.preventDefault()
     setError(null)
+
     try {
       await myfetch.post('/challenges/xss/comments', { content })
       setContent('')
       await loadComments()
-    }
-    catch(error) {
+    } catch (error) {
       setError(error.message)
     }
   }
 
-  return <Stack spacing={3}>
-    <Typography variant="h1">Desafio: XSS armazenado</Typography>
-    <Alert severity="warning">
-      Esta tela renderiza comentários sem escape de propósito. Use somente dados de laboratório.
-    </Alert>
-    {error && <Alert severity="error">{error}</Alert>}
-    <Paper sx={{ p: 3 }}>
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={2}>
-          <TextField
-            label="Comentário"
-            value={content}
-            onChange={event => setContent(event.target.value)}
-            multiline
-            required
-            fullWidth
-          />
-          <Button type="submit" variant="contained" color="secondary">
-            Publicar comentário
-          </Button>
+  return (
+    <Stack spacing={3}>
+      <Typography variant="h1">
+        Desafio: XSS armazenado
+      </Typography>
+
+      <Alert severity="info">
+        Os comentários são exibidos como texto para impedir
+        a execução de HTML e JavaScript enviados pelo usuário.
+      </Alert>
+
+      {error && (
+        <Alert severity="error">
+          {error}
+        </Alert>
+      )}
+
+      <Paper sx={{ p: 3 }}>
+        <form onSubmit={handleSubmit}>
+          <Stack spacing={2}>
+            <TextField
+              label="Comentário"
+              value={content}
+              onChange={event => setContent(event.target.value)}
+              multiline
+              required
+              fullWidth
+              inputProps={{ maxLength: 2000 }}
+            />
+
+            <Button
+              type="submit"
+              variant="contained"
+              color="secondary"
+              disabled={!content.trim() || content.length > 2000}
+            >
+              Publicar comentário
+            </Button>
+          </Stack>
+        </form>
+      </Paper>
+
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h2" sx={{ fontSize: '1.5rem' }}>
+          Comentários
+        </Typography>
+
+        <Stack spacing={2} sx={{ mt: 2 }}>
+          {comments.length === 0 ? (
+            <Typography color="text.secondary">
+              Nenhum comentário publicado.
+            </Typography>
+          ) : (
+            comments.map(comment => (
+              <Paper
+                key={comment.id}
+                variant="outlined"
+                sx={{ p: 2, overflowWrap: 'anywhere' }}
+              >
+                <Typography
+                  component="p"
+                  sx={{ whiteSpace: 'pre-wrap', m: 0 }}
+                >
+                  {comment.content}
+                </Typography>
+              </Paper>
+            ))
+          )}
         </Stack>
-      </form>
-    </Paper>
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h2" sx={{ fontSize: '1.5rem' }}>Comentários</Typography>
-      {/* OWASP Top 10:2025 A05 - Injeção (XSS armazenado):
-          dangerouslySetInnerHTML interpreta o comentário como HTML sem escape ou sanitização. */}
-      {comments.map(comment => (
-        <div key={comment.id} dangerouslySetInnerHTML={{ __html: `<p>${comment.content}</p>` }} />
-      ))}
-    </Paper>
-  </Stack>
+      </Paper>
+    </Stack>
+  )
 }
