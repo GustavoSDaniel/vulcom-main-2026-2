@@ -1,10 +1,17 @@
 import prisma from '../database/client.js'
 import jwt from 'jsonwebtoken'
+import argon2 from 'argon2'
 
 const controller = {}     // Objeto vazio
 
 controller.create = async function(req, res) {
   try {
+    
+    if (req.body.password) {
+      req.body.password = await argon2.hash(req.body.password, {
+        type: argon2.argon2id
+      })
+    }
 
     // OWASP Top 10:2025 A01 - Falha no Controle de Acesso:
     // atribuição em massa permite ao cliente definir campos sensíveis, como is_admin.
@@ -62,6 +69,12 @@ controller.retrieveOne = async function(req, res) {
 
 controller.update = async function(req, res) {
   try {
+
+    if (req.body.password) {
+      req.body.password = await argon2.hash(req.body.password, {
+        type: argon2.argon2id
+      })
+    }
 
     // OWASP Top 10:2025 A01 - Falha no Controle de Acesso:
     // o cliente pode alterar is_admin e password de qualquer usuário por atribuição em massa.
@@ -133,7 +146,7 @@ controller.login = async function(req, res) {
       // a comparação direta usa a senha armazenada em texto puro, sem hash adaptativo.
       let passwordIsValid
       if(req.body?.username === 'admin' && req.body?.password === 'admin123') passwordIsValid = true
-      else passwordIsValid = user.password === req.body?.password
+      else passwordIsValid = await argon2.verify(user.password, req.body?.password)
 
       // Se a senha estiver errada, retorna
       // HTTP 401: Unauthorized
