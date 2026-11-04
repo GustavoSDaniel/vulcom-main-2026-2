@@ -1,4 +1,5 @@
 import dotenv from 'dotenv'
+import auth from './middleware/auth.js'
 dotenv.config() // Carrega as variáveis de ambiente do arquivo .env
 
 
@@ -27,6 +28,7 @@ app.use(logger('dev'))
 app.use(json())
 app.use(urlencoded({ extended: false }))
 app.use(cookieParser())
+app.use(auth)
 
 
 /*********** ROTAS DA API **************/

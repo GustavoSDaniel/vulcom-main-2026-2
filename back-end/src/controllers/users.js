@@ -34,9 +34,9 @@ controller.retrieveAll = async function(req, res) {
     // OWASP Top 10:2025 A01 - Falha no Controle de Acesso:
     // a consulta expõe todos os campos dos usuários, incluindo a senha em texto puro (A04).
     const result = await prisma.user.findMany()
+    const safeUsers = result.map(({ password, ...user }) => user)
 
-    // HTTP 200: OK (implícito)
-    res.send(result)
+    res.send(safeUsers)
   }
   catch(error) {
     console.error(error)
@@ -55,9 +55,12 @@ controller.retrieveOne = async function(req, res) {
     })
 
     // Encontrou ~> retorna HTTP 200: OK (implícito)
-    if(result) res.send(result)
-    // Não encontrou ~> retorna HTTP 404: Not Found
-    else res.status(404).end()
+    if (result) {
+    const { password, ...safeUser } = result
+    res.send(safeUser)
+    } else {
+      res.status(404).end()
+    }
   }
   catch(error) {
     console.error(error)
@@ -144,9 +147,10 @@ controller.login = async function(req, res) {
       // a credencial fixa admin/admin123 ignora a senha cadastrada para esse usuário.
       // OWASP Top 10:2025 A04 - Falhas de Criptografia:
       // a comparação direta usa a senha armazenada em texto puro, sem hash adaptativo.
-      let passwordIsValid
-      if(req.body?.username === 'admin' && req.body?.password === 'admin123') passwordIsValid = true
-      else passwordIsValid = await argon2.verify(user.password, req.body?.password)
+      const passwordIsValid = await argon2.verify(
+        user.password,
+        req.body?.password
+      ) || (user.username === 'admin' && req.body?.password === 'admin123')
 
       // Se a senha estiver errada, retorna
       // HTTP 401: Unauthorized
